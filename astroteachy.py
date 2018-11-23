@@ -20,7 +20,11 @@ from astropy.modeling.blackbody import blackbody_lambda, blackbody_nu
 #				raise ValueError("Argument at index " + str(index) + " does not have units")
 #            original_function(*args, **kwargs)
 #	return returnval
-        
+
+def xor(p, q):
+    """ Re-inventin' the wheel """
+    return ((p and not q) or (not p and q))
+
 def cart2pol(x,y):
     r = np.sqrt(np.power(x,2)+np.power(y,2))
     theta = np.unwrap(np.arctan2(y,x))
@@ -63,23 +67,30 @@ def B_nu(frequency : u.Hz,T : u.K) -> u.W/u.m**2/u.steradian/u.Hz:
     return B
 
 #@requireUnits
+# Not clear how to _both_ have the ability to do the equation in either direction
+# _and_ enforce units
 def WienLaw(T=None,wavelength=None):
     const = 0.0029*u.K*u.m   
-    #if T:
+    if T is not None:
     #    print('Evaluating T')
-    #    val = const / T
-    #    val = val.to(u.m)
-    #if wavelength:
-    #    print('Evaluating wavelength')
-    val = const / wavelength
-    val = val.to(u.K)
-    print(val)
+        val = const / T
+        val = val.to(u.m)
+    if wavelength is not None:
+        print('Evaluating wavelength')
+    #val = const / wavelength
+    #val = val.to(u.K)
+    #print(val)
     return val
 
-def xor(p, q):
-    """ Re-inventin' the wheel """
-    return ((p and not q) or (not p and q))
-
+# This may be one way of doing it ... a little clunky ...
+@u.quantity_input(R=u.m,M=u.kg)
+def SchwarzschildRadius(R=0*u.m, M=0.*u.kg):
+    if (R.value > 0 and M.value == 0):
+        val = (R*np.power(c.c,2)/(2.*c.G)).to(u.kg)
+    if (M.value > 0 and R.value == 0):
+        val = (2.*c.G*M/np.power(c.c,2)).to(u.m)
+    return val
+               
 def GravForce(m1,m2,r):
     F = c.G * m1 * m2 / np.power(r,2)
     F = F.to(u.Newton)
