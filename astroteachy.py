@@ -83,7 +83,7 @@ def WienLaw(T=None,wavelength=None):
     return val
 
 # This may be one way of doing it ... a little clunky ...
-@u.quantity_input(R=u.m,M=u.kg)
+@u.quantity_input(R=u.m, M=u.kg)
 def SchwarzschildRadius(R=0*u.m, M=0.*u.kg):
     if (R.value > 0 and M.value == 0):
         val = (R*np.power(c.c,2)/(2.*c.G)).to(u.kg)
@@ -105,17 +105,35 @@ def EscapeVelocity(M,R):
     v_esc = v_esc.to(u.meter/u.second)
     return v_esc
 
-def Keplers3rdNewton(M=None,a=None,P=None):
+""" This does do all the things I want: ensure quantities have appropriate 
+input units, be able to calculate any 3rd quantity given the other two, and 
+ensure the output is sensible for any set of inputs.  But, it's clunky.  """
+@u.quantity_input(M=u.kg, a=u.m, P=u.s)
+def Keplers3rdNewton(M=0*u.kg, a=0*u.m, P=0*u.s, output_unit = None):
+    """ Calculate Newton's version of Kepler's Third Law, given any two of the
+    three variables mass M, semimajor axis a, period P """
     fac = np.power(2.*np.pi,2)/c.G
-    if ((M is not None) & (a is not None) & (P is None)):
+    if ((M.value > 0) & (a.value > 0) & (P.value == 0)):
         P = np.sqrt(fac*np.power(a,3)/M)
-        P = P.to(u.s)
+        # Surely this can be generalized a bit
+        if (output_unit is None):
+            P = P.to(u.s)
+        else:
+            P = P.to(output_unit)
         returnval = P
-    if ((M is not None) & (a is None) & (P is not None)):
+    if ((M.value > 0) & (a.value == 0) & (P.value > 0)):
         a = np.power(np.power(P,2)/(fac/M),1./3.)
+        if (output_unit is None):
+            a = a.to(u.m)
+        else:
+            a = a.to(output_unit)
         returnval = a
-    if ((M is None) & (a is not None) & (P is not None)):
+    if ((M.value == 0) & (a.value > 0) & (P.value > 0)):
         M = np.power(a,3)/np.power(P,2)*fac
+        if (output_unit is None):
+            M = M.to(u.kg)
+        else:
+            M = M.to(output_unit)
         returnval = M
     return returnval
 
