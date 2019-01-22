@@ -66,48 +66,22 @@ def B_nu(frequency : u.Hz,T : u.K) -> u.W/u.m**2/u.steradian/u.Hz:
     B = blackbody_nu(frequency,T)
     return B
 
-#@requireUnits
-# Not clear how to _both_ have the ability to do the equation in either direction
-# _and_ enforce units
-def WienLaw(T=None,wavelength=None):
-    const = 0.0029*u.K*u.m   
-    if T is not None:
-    #    print('Evaluating T')
-        val = const / T
-        val = val.to(u.m)
-    if wavelength is not None:
-        print('Evaluating wavelength')
-    #val = const / wavelength
-    #val = val.to(u.K)
-    #print(val)
-    return val
+"""This is a template for a function that does all the things I want:
+ensure quantities have appropriate input units, be able to calculate
+any quantity from an algebraic equation given the other N-1
+qauntities, and ensure the output unit is sensible for any set of
+inputs, but also allow the output unit to be whatever they specify.
+But, it's clunky.  First, because the output units differ depending on
+the inputs, I can't use astropy's way of checking the output units.
+Second, numerically comparing against zero is a bad idea, and not
+clear if there is any numerical value which is good in general.
+Finally, there's a lot of re-typing things for every new function of
+this type.  It would be nice to have a generalized template that
+specifies the inputs and their units, and switches to the appropriate
+algebraic expression depending on the inputs.
 
-# This may be one way of doing it ... a little clunky ...
-@u.quantity_input(R=u.m, M=u.kg)
-def SchwarzschildRadius(R=0*u.m, M=0.*u.kg):
-    if (R.value > 0 and M.value == 0):
-        val = (R*np.power(c.c,2)/(2.*c.G)).to(u.kg)
-    if (M.value > 0 and R.value == 0):
-        val = (2.*c.G*M/np.power(c.c,2)).to(u.m)
-    return val
-               
-def GravForce(m1,m2,r):
-    F = c.G * m1 * m2 / np.power(r,2)
-    F = F.to(u.Newton)
-    return F
+"""
 
-def alphaLaneEmden(n,P_c,rho_c):
-    alpha2 = (n+1)*P_c/(4.*np.pi*c.G*np.power(rho_c,2))
-    return np.sqrt(alpha2)
-
-def EscapeVelocity(M,R):
-    v_esc = np.sqrt(2*c.G*M/R)
-    v_esc = v_esc.to(u.meter/u.second)
-    return v_esc
-
-""" This does do all the things I want: ensure quantities have appropriate 
-input units, be able to calculate any 3rd quantity given the other two, and 
-ensure the output is sensible for any set of inputs.  But, it's clunky.  """
 @u.quantity_input(M=u.kg, a=u.m, P=u.s)
 def Keplers3rdNewton(M=0*u.kg, a=0*u.m, P=0*u.s, output_unit = None):
     """ Calculate Newton's version of Kepler's Third Law, given any two of the
@@ -136,6 +110,44 @@ def Keplers3rdNewton(M=0*u.kg, a=0*u.m, P=0*u.s, output_unit = None):
             M = M.to(output_unit)
         returnval = M
     return returnval
+
+@u.quantity_input(T=u.K, wavelength=u.m)
+def WienLaw(T=0*u.K,wavelength=0*u.m):
+    const = 0.0029*u.K*u.m   
+
+    if (T.value > 0 and wavelength.value == 0):
+        val = const / T
+        val = val.to(u.m)
+
+    if (T.value == 0 and wavelength.value > 0):
+        val = const / wavelength
+        val = val.to(u.K)
+
+    return val
+
+@u.quantity_input(R=u.m, M=u.kg)
+def SchwarzschildRadius(R=0*u.m, M=0.*u.kg):
+    if (R.value > 0 and M.value == 0):
+        val = (R*np.power(c.c,2)/(2.*c.G)).to(u.kg)
+    if (M.value > 0 and R.value == 0):
+        val = (2.*c.G*M/np.power(c.c,2)).to(u.m)
+    return val
+               
+def GravForce(m1,m2,r):
+    F = c.G * m1 * m2 / np.power(r,2)
+    F = F.to(u.Newton)
+    return F
+
+def alphaLaneEmden(n,P_c,rho_c):
+    alpha2 = (n+1)*P_c/(4.*np.pi*c.G*np.power(rho_c,2))
+    return np.sqrt(alpha2)
+
+def EscapeVelocity(M,R):
+    v_esc = np.sqrt(2*c.G*M/R)
+    v_esc = v_esc.to(u.meter/u.second)
+    return v_esc
+
+
 
 def orbit( Mstar_Solmass, aAU, e ):
     """ orbit : [ P, t, r, theta, x, y ] = orbit( Mstar_Solmass, aAU, e )
